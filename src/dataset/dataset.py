@@ -10,7 +10,7 @@ from src.dataset.audio_utils import load_and_preprocess_audio
 from src.dataset.f0_utils import get_lf0_from_wav
 
 class VCDataset(Dataset):
-    def __init__(self, data_path = None, part='train', max_audio_length=8192):
+    def __init__(self, data_path = None, part='train', max_audio_length=32000):
         super().__init__()
         self.part = part
         if data_path == None:

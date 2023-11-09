@@ -5,6 +5,7 @@ import warnings
 import argparse
 from tqdm.auto import tqdm
 import wandb
+from pathlib import Path
 
 from src.model import HiFiVC
 from src.utils import read_json
@@ -31,7 +32,6 @@ def train(args):
     dataset = VCDataset(data_path=args.data_path, part='train')
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
                             num_workers=args.num_workers, collate_fn=collate_fn)
-    progress_bar = tqdm(dataloader)
 
     D_optimizer = torch.optim.Adam(model.descriminator.parameters(), lr=0.0002)
 
@@ -49,8 +49,14 @@ def train(args):
 
     log_step = 50
 
+    save_path = Path(args.save_path)
+    save_path.mkdir(parents=True, exist_ok=True)
+
+    step = 0
+
     for epoch in range(args.n_epochs):
         print(f'Epoch: {epoch}')
+        progress_bar = tqdm(dataloader)
         for i, batch in enumerate(progress_bar):
             batch['real_audio'] = batch['real_audio'].to(device)
             batch['f0'] = batch['f0'].to(device)
@@ -67,7 +73,7 @@ def train(args):
             D_loss.backward()
 
             if i % log_step == 0:
-                wandb.log({"D_loss": D_loss.item()})
+                wandb.log({"D_loss": D_loss.item()}, step=step)
                 print(f"D_loss: {D_loss.item()}")
 
             D_optimizer.step()
@@ -79,12 +85,21 @@ def train(args):
             G_loss = generator_criterion(**batch)
 
             if i % log_step == 0:
-                wandb.log({"G_loss": G_loss.item()})
+                wandb.log({"G_loss": G_loss.item()}, step=step)
                 print(f"G_loss: {G_loss.item()}")
 
             G_loss.backward()
             G_optimizer.step()
             G_scheduler.step()
+            step += 1
+        torch.save(model.state_dict(), str(save_path / f'model.pth'),
+                   _use_new_zipfile_serialization=False)
+        generated_audio = batch['generated_audio'][0].detach().cpu().numpy().T
+        real_audio = batch['real_audio'][0].detach().cpu().numpy().T
+        wandb.log({
+            'generated_audio': wandb.Audio(generated_audio, sample_rate=16000),
+            'real_audio': wandb.Audio(real_audio, sample_rate=16000)
+        }, step=step)
         
 
 if __name__ == '__main__':
@@ -102,6 +117,13 @@ if __name__ == '__main__':
         default=None,
         type=str,
         help="data path (default: None)",
+    )
+    args.add_argument(
+        "-s",
+        "--save_path",
+        default='saved',
+        type=str,
+        help="save path (default: saved)",
     )
     args.add_argument(
         "-n",
