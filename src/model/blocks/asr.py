@@ -10,11 +10,15 @@ class ASRModel(nn.Module):
         )
     
     def forward(self, audio, audio_length, **batch):
-        preproc_audio, preproc_audio_length = self.asr_model.preprocessor.forward(
-            input_signal=audio,
-            length=audio_length
-        )
-        encoded, encoded_length = self.asr_model.encoder.forward(
-            audio_signal=preproc_audio,
-            length=preproc_audio_length)
+        # preproc_audio, preproc_audio_length = self.asr_model.preprocessor.forward(
+        #     input_signal=audio,
+        #     length=audio_length
+        # )
+        # encoded, encoded_length = self.asr_model.encoder.forward(
+        #     audio_signal=preproc_audio,
+        #     length=preproc_audio_length)
+        encoded, _, _ = self.asr_model.forward(input_signal=audio,
+                                         input_signal_length=audio_length)
+        encoded = encoded.transpose(1, 2)
+        #print(encoded.shape)
         return encoded
