@@ -44,6 +44,9 @@ def train(args):
     descriminator_criterion = DescriminatorLoss()
     generator_criterion = GeneratorLoss()
 
+    descriminator_criterion.to(device)
+    generator_criterion.to(device)
+
     log_step = 50
 
     for epoch in range(args.n_epochs):
