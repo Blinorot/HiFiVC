@@ -1,0 +1,11 @@
+torch==1.13.1
+torchvision~=0.14.0
+numpy==1.19.5
+tqdm
+nemo_toolkit[all]
+praat-parselmouth
+
+speechbrain~=0.5.12
+wandb
+torchaudio~=0.13.1
+gdown>=4.5.4
