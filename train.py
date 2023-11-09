@@ -29,8 +29,8 @@ def train(args):
     model = HiFiVC(device, **config)
     model.to(device)
     dataset = VCDataset(data_path=args.data_path, part='train')
-    dataloader = DataLoader(dataset, batch_size=2, shuffle=True,
-                            num_workers=2, collate_fn=collate_fn)
+    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
+                            num_workers=args.num_workers, collate_fn=collate_fn)
     progress_bar = tqdm(dataloader)
 
     D_optimizer = torch.optim.Adam(model.descriminator.parameters(), lr=0.0002)
@@ -106,6 +106,19 @@ if __name__ == '__main__':
         default=100,
         type=int,
         help="number of epochs (default: 100)",
+    )
+    args.add_argument(
+        "-b",
+        "--batch_size",
+        default=20,
+        type=int,
+        help="batch_size (default: 20)",
+    )
+    args.add_argument(
+        "--num_workers",
+        default=2,
+        type=int,
+        help="number of workers (default: 2)",
     )
 
     args = args.parse_args()
