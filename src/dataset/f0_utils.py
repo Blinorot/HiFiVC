@@ -8,10 +8,10 @@ from scipy.interpolate import interp1d
 
 
 def compute_f0_from_wav(
-    wav_path: str,
+    wav,
 ) -> np.ndarray:
     sampling_rate = 16000
-    snd = parselmouth.Sound(wav_path).resample(sampling_rate)
+    snd = parselmouth.Sound(values=wav, sampling_frequency=sampling_rate).resample(sampling_rate)
     x = snd.as_array()
     length = x.shape[-1]
     x = x[0, : length // 640 * 640]
@@ -21,14 +21,14 @@ def compute_f0_from_wav(
     return pitch
 
 
-def get_lf0_from_wav(wav_path: str, sr=16000) -> torch.Tensor:
-    f0 = compute_f0_from_wav(wav_path)
+def get_lf0_from_wav(wav, sr=16000) -> torch.Tensor:
+    f0 = compute_f0_from_wav(wav)
 
     unvoiced, continious_f0 = get_continious_f0(f0)
     log_f0_with_unvoiced = np.concatenate(
         [continious_f0[None], unvoiced[None]], axis=0
     )
-    log_f0_with_unvoiced = torch.from_numpy(log_f0_with_unvoiced)
+    log_f0_with_unvoiced = torch.tensor(log_f0_with_unvoiced, dtype=torch.float32)
     return log_f0_with_unvoiced.unsqueeze(0)
 
 

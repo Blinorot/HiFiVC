@@ -103,6 +103,7 @@ vc_env/
 
 # input data, saved log, checkpoints
 data/
+index/
 input/
 saved/
 results/

@@ -1,5 +1,5 @@
 import torch
-from src.dataset.audio_utils import mel_spectrogram
+from src.preprocessing.melspec import MelSpectrogram
 from torch import nn
 
 
@@ -11,10 +11,10 @@ class GeneratorLoss(nn.Module):
         self.mel_coef = mel_coef
 
         self.l1_loss = nn.L1Loss()
-        self.mel_transform = mel_spectrogram
+        self.mel_transform = MelSpectrogram()
 
     def forward(self, 
-        audio, 
+        real_audio, 
         generated_audio,
         p_gen_outs,
         p_real_feat,
@@ -23,7 +23,7 @@ class GeneratorLoss(nn.Module):
         s_real_feat,
         s_gen_feat,
         **kwargs):
-        spectrogram = self.mel_transform(audio)
+        spectrogram = self.mel_transform(real_audio)
         generated_audio = generated_audio.squeeze(1) # remove channel
         generated_spectrogram = self.mel_transform(generated_audio) 
         

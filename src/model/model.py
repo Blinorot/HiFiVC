@@ -14,14 +14,15 @@ class HiFiVC(nn.Module):
         self.speaker_encoder = ECAPA_TDNN(**kwargs)
         self.load_encoder()
 
-        self.Fmodel = FModel(**kwargs)
+        self.FModel = FModel(**kwargs)
         self.AsrModel = ASRModel(**kwargs)
+        #self.AsrModel = nn.Identity()
 
         self.descriminator = Descriminator(**kwargs)
 
         self.speaker_proj = []
         for i in range(len(kwargs['speaker_proj'])):
-            self.speaker_proj.append(nn.Linear(256, kwargs['speaker_proj'][i]))
+            self.speaker_proj.append(nn.Linear(192, kwargs['speaker_proj'][i]))
         self.speaker_proj_length = len(self.speaker_proj)
         self.speaker_proj = nn.ModuleList(self.speaker_proj)   
     
@@ -44,10 +45,10 @@ class HiFiVC(nn.Module):
 
         self.speaker_encoder.load_state_dict(new_state_dict)
 
-    def forward(self, real_audio, f0, **batch):
+    def forward(self, real_audio, f0, audio_length, **batch):
         with torch.no_grad():
-            speaker_info = self.speaker_encoder(real_audio)
-            text_info = self.AsrModel(real_audio)
+            speaker_info = self.speaker_encoder(real_audio[:,0,:]).unsqueeze(1)
+            text_info = self.AsrModel(real_audio[:,0,:], audio_length)
 
         f_info = self.FModel(f0)
 
@@ -58,6 +59,9 @@ class HiFiVC(nn.Module):
             speaker_info_list.append(self.speaker_proj[i](speaker_info))
 
         result = self.generator(spectrogram, speaker_info_list)
+        result['generated_audio'] = result['generated_audio'][:, :, :audio_length[0]]
+
+        #print(result['generated_audio'].shape, real_audio.shape)
 
         return result
 
