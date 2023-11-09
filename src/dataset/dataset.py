@@ -15,6 +15,8 @@ class VCDataset(Dataset):
         self.part = part
         if data_path == None:
             data_path = Path(__file__).absolute().resolve().parent.parent.parent / 'data' / 'VCTK-Corpus/VCTK-Corpus/wav48'
+        else:
+            data_path = Path(data_path)
         self.index_path = Path(__file__).absolute().resolve().parent.parent.parent / 'index'
         self.data_path = data_path
 
