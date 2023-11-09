@@ -128,9 +128,9 @@ if __name__ == '__main__':
     args.add_argument(
         "-n",
         "--n_epochs",
-        default=100,
+        default=120,
         type=int,
-        help="number of epochs (default: 100)",
+        help="number of epochs (default: 120)",
     )
     args.add_argument(
         "-b",
