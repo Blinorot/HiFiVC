@@ -7,12 +7,12 @@ class FModel(nn.Module):
         self.pitch_convs = nn.Sequential(
             nn.Conv1d(
                     2, pitch_embed_dim, kernel_size=3, stride=2, 
-                    padding=1, bias=False),
+                    padding=2, bias=False),
             nn.ReLU(),
             nn.InstanceNorm1d(pitch_embed_dim, affine=False),
             nn.Conv1d(
                     pitch_embed_dim, pitch_embed_dim, kernel_size=3, stride=2, 
-                    padding=2, bias=False),
+                    padding=1, bias=False),
             nn.ReLU(),
             nn.InstanceNorm1d(pitch_embed_dim, affine=False),
         )

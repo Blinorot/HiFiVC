@@ -77,7 +77,7 @@ class Generator(nn.Module):
         self.out_conv = nn.Sequential(
             nn.LeakyReLU(),
             nn.Conv1d(current_channels, 1, 7, 
-                      padding=get_conv_padding_size(7, 1, 1)),
+                      padding=get_conv_padding_size(7, 1, 1), bias=False),
             nn.Tanh()
         )
 
