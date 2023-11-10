@@ -35,12 +35,19 @@ def train(args):
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
                             num_workers=args.num_workers, collate_fn=collate_fn)
 
-    D_optimizer = torch.optim.Adam(model.descriminator.parameters(), lr=0.0002)
+    weight_decay = 0.01
+    betas = [0.8, 0.99]
+    lr = 0.0002
+    
+    D_optimizer = torch.optim.Adam(model.descriminator.parameters(), lr=lr, 
+                                   weight_decay=weight_decay, betas=betas)
 
     G_params = list(model.generator.parameters()) + list(model.FModel.parameters()) +\
             list(model.speaker_proj.parameters())
 
-    G_optimizer = torch.optim.Adam(G_params, lr=0.0002)
+    
+    G_optimizer = torch.optim.Adam(G_params, lr=lr, 
+                                   weight_decay=weight_decay, betas=betas)
     D_scheduler = torch.optim.lr_scheduler.ExponentialLR(D_optimizer, gamma=0.995)
     G_scheduler = torch.optim.lr_scheduler.ExponentialLR(G_optimizer, gamma=0.995)
 
@@ -157,5 +164,5 @@ if __name__ == '__main__':
 
     with wandb.init(
         project="HiFiVC",
-        name="test"):
+        name="test_wd"):
         train(args)
