@@ -46,8 +46,8 @@ class HiFiVC(nn.Module):
         self.speaker_encoder.load_state_dict(new_state_dict)
 
     def forward(self, real_audio, f0, audio_length, **batch):
+        speaker_info = self.speaker_encoder(real_audio[:,0,:])
         with torch.no_grad():
-            speaker_info = self.speaker_encoder(real_audio[:,0,:]).unsqueeze(1)
             text_info = self.AsrModel(real_audio[:,0,:], audio_length)
 
         f_info = self.FModel(f0)
@@ -56,7 +56,7 @@ class HiFiVC(nn.Module):
 
         speaker_info_list = []
         for i in range(self.speaker_proj_length):
-            speaker_info_list.append(self.speaker_proj[i](speaker_info))
+            speaker_info_list.append(self.speaker_proj[i](speaker_info).unsqueeze(2))
 
         result = self.generator(spectrogram, speaker_info_list)
         result['generated_audio'] = result['generated_audio'][:, :, :audio_length[0]]

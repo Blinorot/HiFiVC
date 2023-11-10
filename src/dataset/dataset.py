@@ -10,7 +10,7 @@ from src.dataset.audio_utils import load_and_preprocess_audio
 from src.dataset.f0_utils import get_lf0_from_wav
 
 class VCDataset(Dataset):
-    def __init__(self, data_path = None, part='train', max_audio_length=16000):
+    def __init__(self, data_path = None, part='train', max_audio_length=16000, limit=None):
         super().__init__()
         self.part = part
         if data_path == None:
@@ -24,6 +24,9 @@ class VCDataset(Dataset):
         self.index_path.mkdir(parents=True, exist_ok=True)
 
         self.index = self.load_index()
+        if limit is not None:
+            self.index = self.index[:limit]
+        self.limit = limit
         self.max_audio_length = max_audio_length
 
     def load_index(self):
@@ -71,6 +74,8 @@ class VCDataset(Dataset):
 
         if audio_wave.shape[-1] > self.max_audio_length:
             random_start = np.random.randint(0, audio_wave.shape[-1] - self.max_audio_length + 1)
+            if self.limit:
+                random_start = 0
             audio_wave = audio_wave[..., random_start:random_start+self.max_audio_length]
         elif audio_wave.shape[-1] < self.max_audio_length:
             pad_length = self.max_audio_length - audio_wave.shape[-1]

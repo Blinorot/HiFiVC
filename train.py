@@ -29,13 +29,16 @@ def train(args):
     
     model = HiFiVC(device, **config)
     model.to(device)
-    dataset = VCDataset(data_path=args.data_path, part='train')
+    dataset = VCDataset(data_path=args.data_path, part='train',
+                        max_audio_length=config['max_audio_length'],
+                        limit=config.get('limit', None))
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
                             num_workers=args.num_workers, collate_fn=collate_fn)
 
     D_optimizer = torch.optim.Adam(model.descriminator.parameters(), lr=0.0002)
 
-    G_params = list(model.generator.parameters()) + list(model.FModel.parameters())
+    G_params = list(model.generator.parameters()) + list(model.FModel.parameters()) +\
+            list(model.speaker_proj.parameters())
 
     G_optimizer = torch.optim.Adam(G_params, lr=0.0002)
     D_scheduler = torch.optim.lr_scheduler.ExponentialLR(D_optimizer, gamma=0.995)
@@ -53,6 +56,8 @@ def train(args):
     save_path.mkdir(parents=True, exist_ok=True)
 
     step = 0
+
+    model.train()
 
     for epoch in range(args.n_epochs):
         print(f'Epoch: {epoch}')
