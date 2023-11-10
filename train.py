@@ -58,6 +58,8 @@ def train(args):
     step = 0
 
     model.train()
+    model.AsrModel.eval()
+    model.speaker_encoder.eval()
 
     for epoch in range(args.n_epochs):
         print(f'Epoch: {epoch}')
