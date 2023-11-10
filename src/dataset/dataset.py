@@ -45,7 +45,7 @@ class VCDataset(Dataset):
     def create_index(self):
         index = []
         if self.part == 'train':
-            speakers = [f'p{i}' for i in range(225, 230)]
+            speakers = [f'p{i}' for i in range(225, 227)]
         else:
             speakers = [f'p{i}' for i in range(361, 377)]
 
