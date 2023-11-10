@@ -4,7 +4,7 @@ from torch import nn
 
 
 class GeneratorLoss(nn.Module):
-    def __init__(self, fm_coef=1, mel_coef=45):
+    def __init__(self, fm_coef=2, mel_coef=45):
         super().__init__()
 
         self.fm_coef = fm_coef
