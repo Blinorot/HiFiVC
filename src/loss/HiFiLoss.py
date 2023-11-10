@@ -53,7 +53,7 @@ class GeneratorLoss(nn.Module):
 
         G_loss = adv_loss + self.fm_coef * fm_loss + self.mel_coef * mel_loss
 
-        return G_loss
+        return G_loss, adv_loss, fm_loss, mel_loss
 
 class DescriminatorLoss(nn.Module):
     def __init__(self):

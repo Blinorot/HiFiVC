@@ -8,5 +8,8 @@
     "C": 1024,
     "pitch_embed_dim": 512,
     "speaker_proj": [512, 256, 128, 64],
-    "max_audio_length": 8000
+    "max_audio_length": 8000,
+    "weight_decay": 0.01,
+    "betas": [0.8, 0.99],
+    "lr": 0.0002
 }

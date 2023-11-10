@@ -5,6 +5,7 @@ import torchaudio
 import torch
 from tqdm.auto import tqdm
 import numpy as np
+import random
 
 from src.dataset.audio_utils import load_and_preprocess_audio
 from src.dataset.f0_utils import get_lf0_from_wav
@@ -25,6 +26,7 @@ class VCDataset(Dataset):
 
         self.index = self.load_index()
         if limit is not None:
+            random.shuffle(self.index)
             self.index = self.index[:limit]
         self.limit = limit
         self.max_audio_length = max_audio_length

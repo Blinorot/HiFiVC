@@ -35,18 +35,18 @@ def train(args):
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
                             num_workers=args.num_workers, collate_fn=collate_fn)
 
-    weight_decay = 0.01
-    betas = [0.8, 0.99]
-    lr = 0.0002
+    weight_decay = config['weight_decay']
+    betas = config['betas']
+    lr = config['lr']
     
-    D_optimizer = torch.optim.Adam(model.descriminator.parameters(), lr=lr, 
+    D_optimizer = torch.optim.AdamW(model.descriminator.parameters(), lr=lr, 
                                    weight_decay=weight_decay, betas=betas)
 
     G_params = list(model.generator.parameters()) + list(model.FModel.parameters()) +\
             list(model.speaker_proj.parameters())
 
     
-    G_optimizer = torch.optim.Adam(G_params, lr=lr, 
+    G_optimizer = torch.optim.AdamW(G_params, lr=lr, 
                                    weight_decay=weight_decay, betas=betas)
     D_scheduler = torch.optim.lr_scheduler.ExponentialLR(D_optimizer, gamma=0.995)
     G_scheduler = torch.optim.lr_scheduler.ExponentialLR(G_optimizer, gamma=0.995)
@@ -96,10 +96,16 @@ def train(args):
             G_optimizer.zero_grad()
             d_outputs = model.descriminate(**batch)
             batch.update(d_outputs)
-            G_loss = generator_criterion(**batch)
+            G_loss, adv_loss, fm_loss, mel_loss = generator_criterion(**batch)
 
             if i % log_step == 0:
-                wandb.log({"G_loss": G_loss.item()}, step=step)
+                wandb.log({
+                    "G_loss": G_loss.item(),
+                    "adv_loss": adv_loss.item(),
+                    "fm_loss": fm_loss.item(),
+                    "mel_loss": mel_loss.item(),
+                },step=step)
+
                 print(f"G_loss: {G_loss.item()}")
 
             G_loss.backward()
@@ -164,5 +170,5 @@ if __name__ == '__main__':
 
     with wandb.init(
         project="HiFiVC",
-        name="test_wd"):
+        name="train"):
         train(args)
