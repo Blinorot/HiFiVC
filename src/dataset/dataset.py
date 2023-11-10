@@ -45,14 +45,16 @@ class VCDataset(Dataset):
     def create_index(self):
         index = []
         if self.part == 'train':
-            speakers = [f'p{i}' for i in range(225, 241)]
+            speakers = [f'p{i}' for i in range(225, 361)]
         else:
-            speakers = [f'p{i}' for i in range(241, 247)]
+            speakers = [f'p{i}' for i in range(361, 377)]
 
         for speaker_id in tqdm(
                 speakers, desc=f"Preparing VCTK folders: {self.part}"
         ):
             wav_dir = self.data_path / speaker_id
+            if not wav_dir.exists():
+                continue
             wav_paths = list(wav_dir.glob("*.wav"))
             for wav_path in wav_paths:
                 t_info = torchaudio.info(str(wav_path))
