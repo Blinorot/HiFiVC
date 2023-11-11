@@ -43,7 +43,7 @@ def train(args):
                                    weight_decay=weight_decay, betas=betas)
 
     G_params = list(model.generator.parameters()) + list(model.FModel.parameters()) +\
-            list(model.speaker_proj.parameters()) + list(model.speaker_encoder.parameters())
+            list(model.speaker_proj.parameters())
 
     
     G_optimizer = torch.optim.AdamW(G_params, lr=lr, 

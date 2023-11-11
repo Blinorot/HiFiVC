@@ -46,8 +46,8 @@ class HiFiVC(nn.Module):
         self.speaker_encoder.load_state_dict(new_state_dict)
 
     def forward(self, real_audio, f0, audio_length, **batch):
-        speaker_info = self.speaker_encoder(real_audio[:,0,:])
         with torch.no_grad():
+            speaker_info = self.speaker_encoder(real_audio[:,0,:])
             text_info = self.AsrModel(real_audio[:,0,:], audio_length)
 
         f_info = self.FModel(f0)
