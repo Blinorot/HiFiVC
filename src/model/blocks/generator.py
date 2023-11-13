@@ -34,7 +34,7 @@ class MRFBlock(nn.Module):
             layers.append(layer)
 
             speaker = nn.Sequential(
-                #nn.LeakyReLU(LRELU_SLOPE),
+                nn.LeakyReLU(LRELU_SLOPE),
                 weight_norm(
                     nn.Conv1d(1, 1, kernel_size=kernel, 
                           dilation=1, 
@@ -53,7 +53,7 @@ class MRFBlock(nn.Module):
         result = 0
         for i in range(len(self.block)):
             speaker_result = self.speakers[i](speaker)
-            result = result + self.block[i](x) + speaker_result.transpose(1, 2)
+            result = result + self.block[i](x + speaker_result.transpose(1, 2))
         return result
 
 
