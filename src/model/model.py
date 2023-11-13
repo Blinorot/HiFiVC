@@ -55,11 +55,11 @@ class HiFiVC(nn.Module):
         spectrogram = f_info + text_info
         #print('spec', spectrogram.shape)
 
-        speaker_info_list = []
-        for i in range(self.speaker_proj_length):
-            speaker_info_list.append(self.speaker_proj[i](speaker_info).unsqueeze(1))
+        # speaker_info_list = []
+        # for i in range(self.speaker_proj_length):
+        #     speaker_info_list.append(self.speaker_proj[i](speaker_info).unsqueeze(1))
 
-        result = self.generator(spectrogram, speaker_info_list)
+        result = self.generator(spectrogram, speaker_info.unsqueeze(1))
         #print(result['generated_audio'].shape, real_audio.shape)
         #result['generated_audio'] = result['generated_audio'][:, :, :audio_length[0]]    
 
