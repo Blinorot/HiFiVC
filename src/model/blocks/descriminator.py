@@ -83,7 +83,7 @@ class MultiPeriodDiscriminator(nn.Module):
 
 
 class ScaleDisctiminator(nn.Module):
-    def __init__(self, norm=False):
+    def __init__(self, norm=True):
         super().__init__()
 
         # https://arxiv.org/pdf/1910.06711.pdf MelGAN parameters
