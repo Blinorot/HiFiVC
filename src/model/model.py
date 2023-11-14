@@ -15,7 +15,7 @@ class HiFiVC(nn.Module):
         self.speaker_encoder = VAE(device)
         #self.load_encoder()
 
-        self.FModel = FModel(**kwargs)
+        #self.FModel = FModel(**kwargs)
         self.AsrModel = ASRModel(**kwargs)
         #self.AsrModel = nn.Identity()
 
@@ -46,16 +46,17 @@ class HiFiVC(nn.Module):
 
         self.speaker_encoder.load_state_dict(new_state_dict)
 
-    def forward(self, source_audio, mel_spec, real_audio, f0, audio_length, **batch):
+    def forward(self, source_audio, mel_spec, real_audio, f0=None, audio_length=None, **batch):
         #print("source_shape", source_audio.shape)
         with torch.no_grad():
             speaker_info = self.speaker_encoder(mel_spec)
             text_info = self.AsrModel(source_audio[:,0,:], audio_length)
 
-        f_info = self.FModel(f0)
+        #f_info = self.FModel(f0)
 
         #print(f_info.shape, text_info.shape)
-        spectrogram = f_info + text_info
+        #spectrogram = f_info + text_info
+        spectrogram = text_info
         #print('asr', text_info.shape)
 
         # speaker_info_list = []

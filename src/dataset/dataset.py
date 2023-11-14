@@ -88,7 +88,7 @@ class VCDataset(Dataset):
         target_audio_wave = audio_wave
         source_audio_wave = torchaudio.transforms.Resample(orig_freq=24000, new_freq=16000)(target_audio_wave)
 
-        f0 = get_lf0_from_wav(source_audio_wave.numpy()[0])
+        #f0 = get_lf0_from_wav(source_audio_wave.numpy()[0])
 
         source_audio_length = source_audio_wave.shape[-1]
 
@@ -100,7 +100,7 @@ class VCDataset(Dataset):
             "mel_spec": mel_spec,
             "source_audio": source_audio_wave,
             "real_audio": target_audio_wave,
-            "f0": f0,
+            #"f0": f0,
             "audio_length": source_audio_length
         }
 
@@ -110,6 +110,6 @@ def collate_fn(data_list):
     batch['mel_spec'] = torch.cat([elem['mel_spec'] for elem in data_list], dim=0)
     batch['real_audio'] = torch.cat([elem['real_audio'] for elem in data_list], dim=0).unsqueeze(1)
     batch['source_audio'] = torch.cat([elem['source_audio'] for elem in data_list], dim=0).unsqueeze(1)
-    batch['f0'] = torch.cat([elem['f0'] for elem in data_list], dim=0)
+    #batch['f0'] = torch.cat([elem['f0'] for elem in data_list], dim=0)
     batch['audio_length'] = torch.tensor([elem['audio_length'] for elem in data_list])
     return batch

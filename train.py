@@ -45,7 +45,8 @@ def train(args):
     #G_params = list(model.generator.parameters()) + list(model.FModel.parameters()) +\
     #        list(model.speaker_proj.parameters())
 
-    G_params = list(model.generator.parameters()) + list(model.FModel.parameters())
+    #G_params = list(model.generator.parameters()) + list(model.FModel.parameters())
+    G_params = list(model.generator.parameters())
 
     
     G_optimizer = torch.optim.AdamW(G_params, lr=lr, 
@@ -77,7 +78,7 @@ def train(args):
             batch['mel_spec'] = batch['mel_spec'].to(device)
             batch['real_audio'] = batch['real_audio'].to(device)
             batch['source_audio'] = batch['source_audio'].to(device)
-            batch['f0'] = batch['f0'].to(device)
+            #batch['f0'] = batch['f0'].to(device)
             batch['audio_length'] = batch['audio_length'].to(device)
 
             g_outputs = model(**batch)

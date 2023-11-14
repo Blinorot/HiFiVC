@@ -11,8 +11,8 @@ class MelSpectrogramConfig:
     sr: int = 24000
     win_length: int = 1024
     hop_length: int = 256
-    n_fft: int = 2048
-    f_min: int = 50
+    n_fft: int = 1024
+    f_min: int = 0
     f_max: int = 8000
     n_mels: int = 80
     power: float = 1.0
