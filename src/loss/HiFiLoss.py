@@ -5,11 +5,12 @@ from torch import nn
 
 
 class GeneratorLoss(nn.Module):
-    def __init__(self, fm_coef=1, mel_coef=45):
+    def __init__(self, fm_coef=1, mel_coef=45, kl_coef=0.01):
         super().__init__()
 
         self.fm_coef = fm_coef
         self.mel_coef = mel_coef
+        self.kl_coef = kl_coef
 
         self.l1_loss = nn.L1Loss()
         self.mel_transform = MelSpectrogram()
@@ -23,7 +24,16 @@ class GeneratorLoss(nn.Module):
         s_gen_outs,
         s_real_feat,
         s_gen_feat,
+        mean_info,
+        std_info,
         **kwargs):
+
+        mean_info = mean_info[..., 0]
+        std_info = std_info[..., 0]
+
+        KL_loss = torch.mean(-0.5 * torch.sum(1 + std_info - mean_info ** 2 - std_info.exp(), dim = 1), dim = 0)
+
+
         spectrogram = self.mel_transform(real_audio)
         generated_audio = generated_audio.squeeze(1) # remove channel
         generated_spectrogram = self.mel_transform(generated_audio) 
@@ -41,9 +51,10 @@ class GeneratorLoss(nn.Module):
         # mel_loss
         mel_loss = self.l1_loss(generated_spectrogram, spectrogram)
 
-        G_loss = adv_loss + self.fm_coef * fm_loss + self.mel_coef * mel_loss
+        G_loss = adv_loss + self.fm_coef * fm_loss + self.mel_coef * mel_loss\
+              + self.kl_coef * KL_loss
 
-        return G_loss, adv_loss, fm_loss, mel_loss
+        return G_loss, adv_loss, fm_loss, mel_loss, KL_loss
     
 
 class DescriminatorLoss(nn.Module):

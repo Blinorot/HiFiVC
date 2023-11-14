@@ -34,11 +34,11 @@ class ResBlock1(torch.nn.Module):
         self.convs2.apply(init_weights)
 
         self.spk_convs = nn.ModuleList([
-            weight_norm(Conv1d(256, channels, 1, 1, dilation=1,
+            weight_norm(Conv1d(128, channels, 1, 1, dilation=1,
                                padding=get_padding(1, 1))),
-            weight_norm(Conv1d(256, channels, 1, 1, dilation=1,
+            weight_norm(Conv1d(128, channels, 1, 1, dilation=1,
                                padding=get_padding(1, 1))),
-            weight_norm(Conv1d(256, channels, 1, 1, dilation=1,
+            weight_norm(Conv1d(128, channels, 1, 1, dilation=1,
                                padding=get_padding(1, 1)))
         ])
         self.spk_convs.apply(init_weights)

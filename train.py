@@ -46,7 +46,7 @@ def train(args):
     #        list(model.speaker_proj.parameters())
 
     #G_params = list(model.generator.parameters()) + list(model.FModel.parameters())
-    G_params = list(model.generator.parameters())
+    G_params = list(model.generator.parameters()) + list(model.speaker_encoder.parameters())
 
     
     G_optimizer = torch.optim.AdamW(G_params, lr=lr, 
@@ -69,7 +69,6 @@ def train(args):
 
     model.train()
     model.AsrModel.eval()
-    model.speaker_encoder.eval()
 
     for epoch in range(args.n_epochs):
         print(f'Epoch: {epoch}')
@@ -103,7 +102,7 @@ def train(args):
             G_optimizer.zero_grad()
             d_outputs = model.descriminate(**batch)
             batch.update(d_outputs)
-            G_loss, adv_loss, fm_loss, mel_loss = generator_criterion(**batch)
+            G_loss, adv_loss, fm_loss, mel_loss, kl_loss = generator_criterion(**batch)
 
             if i % log_step == 0:
                 wandb.log({
@@ -111,6 +110,7 @@ def train(args):
                     "adv_loss": adv_loss.item(),
                     "fm_loss": fm_loss.item(),
                     "mel_loss": mel_loss.item(),
+                    "kl_loss": kl_loss.item()
                 },step=step)
                 generated_audio = batch['generated_audio'][0].detach().cpu().numpy().T
                 real_audio = batch['real_audio'][0].detach().cpu().numpy().T
@@ -183,5 +183,5 @@ if __name__ == '__main__':
 
     with wandb.init(
         project="HiFiVC",
-        name="GAN_train"):
+        name="full_train"):
         train(args)

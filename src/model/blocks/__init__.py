@@ -2,7 +2,7 @@
 #from src.model.blocks.generator import Generator
 from src.model.blocks.gan import Generator, Descriminator
 from src.model.blocks.encoder import ECAPA_TDNN
-from src.model.blocks.encoder import VAE
+from src.model.blocks.encoder import VAE, VAE2
 from src.model.blocks.asr import ASRModel
 from src.model.blocks.f import FModel
 
@@ -12,5 +12,6 @@ __all__ = [
     "ECAPA_TDNN",
     "ASRModel",
     "FModel",
-    "VAE"
+    "VAE",
+    "VAE2"
 ]

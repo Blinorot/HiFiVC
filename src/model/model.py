@@ -1,5 +1,5 @@
 import torch
-from src.model.blocks import Descriminator, Generator, ECAPA_TDNN, VAE, ASRModel, FModel
+from src.model.blocks import Descriminator, Generator, ECAPA_TDNN, VAE, VAE2, ASRModel, FModel
 from torch import nn
 from speechbrain.utils.data_utils import download_file
 from pathlib import Path
@@ -12,7 +12,7 @@ class HiFiVC(nn.Module):
 
         self.generator = Generator(**kwargs)
         #self.speaker_encoder = ECAPA_TDNN(**kwargs)
-        self.speaker_encoder = VAE(device)
+        self.speaker_encoder = VAE2(device)
         #self.load_encoder()
 
         #self.FModel = FModel(**kwargs)
@@ -48,8 +48,8 @@ class HiFiVC(nn.Module):
 
     def forward(self, source_audio, mel_spec, real_audio, f0=None, audio_length=None, **batch):
         #print("source_shape", source_audio.shape)
+        speaker_res = self.speaker_encoder(mel_spec)
         with torch.no_grad():
-            speaker_info = self.speaker_encoder(mel_spec)
             text_info = self.AsrModel(source_audio[:,0,:], audio_length)
 
         #f_info = self.FModel(f0)
@@ -58,6 +58,10 @@ class HiFiVC(nn.Module):
         #spectrogram = f_info + text_info
         spectrogram = text_info
         #print('asr', text_info.shape)
+
+        speaker_info = speaker_res['result']
+        mean_info = speaker_res['mean']
+        std_info = speaker_res['std']
 
         # speaker_info_list = []
         # for i in range(self.speaker_proj_length):
@@ -68,6 +72,9 @@ class HiFiVC(nn.Module):
         result['generated_audio'] = result['generated_audio'][..., :real_audio[0].shape[-1]]
         #print(result['generated_audio'].shape, real_audio.shape)
         #result['generated_audio'] = result['generated_audio'][:, :, :audio_length[0]]    
+
+        result['mean_info'] = mean_info
+        result['std_info'] = std_info
 
         return result
 
