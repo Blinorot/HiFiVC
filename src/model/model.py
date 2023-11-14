@@ -12,7 +12,7 @@ class HiFiVC(nn.Module):
 
         self.generator = Generator(**kwargs)
         #self.speaker_encoder = ECAPA_TDNN(**kwargs)
-        self.speaker_encoder = VAE()
+        self.speaker_encoder = VAE(device)
         #self.load_encoder()
 
         self.FModel = FModel(**kwargs)

@@ -203,24 +203,24 @@ class ECAPA_TDNN(nn.Module):
     
 
 class VAE(nn.Module):
-    def __init__(self):
+    def __init__(self, device):
         super().__init__()
         model_path = Path(__file__).absolute().resolve().parent.parent.parent.parent / 'model.pt'
-        self.model = torch.jit.load(model_path, map_location='cpu')
+        self.model = torch.jit.load(model_path, map_location=device)
         self.model.eval()
 
-        self.mean_conv = weight_norm(nn.Conv1d(512, 128, 1))
-        self.std_conv = weight_norm(nn.Conv1d(512, 128, 1))
+        self.mean_conv = weight_norm(nn.Conv1d(512, 128, 1)).to(device)
+        self.std_conv = weight_norm(nn.Conv1d(512, 128, 1)).to(device)
 
         mean_conv_parameters = self.model._voice_conversion.speaker_encoder.mean_conv._parameters
-        self.mean_conv.bias = nn.Parameter(mean_conv_parameters['bias'])
-        self.mean_conv.weight_v = nn.Parameter(mean_conv_parameters['weight_v'])
-        self.mean_conv.weight_g = nn.Parameter(mean_conv_parameters['weight_g'])
+        self.mean_conv.bias = nn.Parameter(mean_conv_parameters['bias']).to(device)
+        self.mean_conv.weight_v = nn.Parameter(mean_conv_parameters['weight_v']).to(device)
+        self.mean_conv.weight_g = nn.Parameter(mean_conv_parameters['weight_g']).to(device)
 
         std_conv_parameters = self.model._voice_conversion.speaker_encoder.std_conv._parameters
-        self.std_conv.bias = nn.Parameter(std_conv_parameters['bias'])
-        self.std_conv.weight_v = nn.Parameter(std_conv_parameters['weight_v'])
-        self.std_conv.weight_g = nn.Parameter(std_conv_parameters['weight_g'])
+        self.std_conv.bias = nn.Parameter(std_conv_parameters['bias']).to(device)
+        self.std_conv.weight_v = nn.Parameter(std_conv_parameters['weight_v']).to(device)
+        self.std_conv.weight_g = nn.Parameter(std_conv_parameters['weight_g']).to(device)
 
         self.mean_conv.eval()
         self.std_conv.eval()
