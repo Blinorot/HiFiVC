@@ -45,9 +45,11 @@ class ResBlock1(torch.nn.Module):
 
     def forward(self, x, speaker):
         for c1, c2, sp in zip(self.convs1, self.convs2, self.spk_convs):
-            speaker_proj = sp(speaker)
-            xt = F.leaky_relu(x + speaker_proj, LRELU_SLOPE)
+            xt = F.leaky_relu(x, LRELU_SLOPE)
             xt = c1(xt)
+            xt = F.leaky_relu(xt, LRELU_SLOPE)
+            speaker_proj = sp(speaker)
+            xt = xt + speaker_proj
             xt = F.leaky_relu(xt, LRELU_SLOPE)
             xt = c2(xt)
             x = xt + x
