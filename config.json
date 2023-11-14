@@ -1,15 +1,16 @@
 {
     "input_channels": 512,
     "hidden_channels": 512,
-    "upsample_kernels": [22, 14, 8, 4],
-    "upsample_stride": [11, 7, 4, 2],
+    "upsample_kernels": [16, 16, 10, 6],
+    "upsample_stride": [8, 8, 5, 3],
     "resblock_kernels": [3, 7, 11],
     "resblock_dilations": [[1, 3, 5], [1, 3, 5], [1, 3, 5]],
     "C": 1024,
     "pitch_embed_dim": 512,
     "speaker_proj": [256, 128, 64, 32],
-    "max_audio_length": 8072,
+    "max_audio_length": 8638,
     "weight_decay": 0.01,
     "betas": [0.8, 0.99],
-    "lr": 0.0002
+    "lr": 0.0002,
+    "limit": 1
 }

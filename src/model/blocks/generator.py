@@ -36,9 +36,9 @@ class MRFBlock(nn.Module):
             speaker = nn.Sequential(
                 nn.LeakyReLU(LRELU_SLOPE),
                 weight_norm(
-                    nn.Conv1d(1, 1, kernel_size=kernel, 
+                    nn.Conv1d(1, 1, kernel_size=1, 
                           dilation=1, 
-                          padding=get_conv_padding_size(kernel, 1, 1))
+                          padding=0)
                 )
             )
             speaker_linear = nn.Linear(192, channels)

@@ -74,7 +74,7 @@ class VCDataset(Dataset):
     def __getitem__(self, ind):
         data_dict = self.index[ind]
         audio_path = data_dict["path"]
-        audio_wave = load_and_preprocess_audio(audio_path, trim=True)
+        audio_wave = load_and_preprocess_audio(audio_path, sr=24000, trim=True)
 
         if audio_wave.shape[-1] > self.max_audio_length:
             random_start = np.random.randint(0, audio_wave.shape[-1] - self.max_audio_length + 1)
@@ -85,20 +85,25 @@ class VCDataset(Dataset):
             pad_length = self.max_audio_length - audio_wave.shape[-1]
             audio_wave = torch.cat([audio_wave, torch.zeros(pad_length).unsqueeze(0)], dim=1)
 
-        f0 = get_lf0_from_wav(audio_wave.numpy()[0])
+        target_audio_wave = audio_wave
+        source_audio_wave = torchaudio.transforms.Resample(orig_freq=24000, new_freq=16000)(target_audio_wave)
 
-        audio_length = audio_wave.shape[-1]
+        f0 = get_lf0_from_wav(source_audio_wave.numpy()[0])
+
+        source_audio_length = source_audio_wave.shape[-1]
         #print(f0.shape, audio_wave.shape, audio_length)
         return {
-            "real_audio": audio_wave,
+            "source_audio": source_audio_wave,
+            "real_audio": target_audio_wave,
             "f0": f0,
-            "audio_length": audio_length
+            "audio_length": source_audio_length
         }
 
 
 def collate_fn(data_list):
     batch = {}
     batch['real_audio'] = torch.cat([elem['real_audio'] for elem in data_list], dim=0).unsqueeze(1)
+    batch['source_audio'] = torch.cat([elem['source_audio'] for elem in data_list], dim=0).unsqueeze(1)
     batch['f0'] = torch.cat([elem['f0'] for elem in data_list], dim=0)
     batch['audio_length'] = torch.tensor([elem['audio_length'] for elem in data_list])
     return batch

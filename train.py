@@ -75,6 +75,7 @@ def train(args):
         progress_bar = tqdm(dataloader)
         for i, batch in enumerate(progress_bar):
             batch['real_audio'] = batch['real_audio'].to(device)
+            batch['source_audio'] = batch['source_audio'].to(device)
             batch['f0'] = batch['f0'].to(device)
             batch['audio_length'] = batch['audio_length'].to(device)
 
