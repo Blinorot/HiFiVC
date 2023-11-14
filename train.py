@@ -82,11 +82,13 @@ def train(args):
 
             g_outputs = model(**batch)
             batch.update(g_outputs)
+
+            D_optimizer.zero_grad()
+
             d_outputs = model.descriminate(generated_audio=batch["generated_audio"].detach(),
                                         real_audio=batch["real_audio"])
             batch.update(d_outputs)
 
-            D_optimizer.zero_grad()
             D_loss = descriminator_criterion(**batch)
             D_loss.backward()
 
@@ -180,5 +182,5 @@ if __name__ == '__main__':
 
     with wandb.init(
         project="HiFiVC",
-        name="train"):
+        name="GAN_train"):
         train(args)
