@@ -23,7 +23,7 @@ class FModel(nn.Module):
             nn.LeakyReLU(LRELU_SLOPE),
             nn.InstanceNorm1d(pitch_embed_dim // 2, affine=False),
             nn.Conv1d(pitch_embed_dim // 2, pitch_embed_dim, kernel_size=7, 
-                      stride=1, padding=1, bias=False)
+                      stride=1, padding=0, bias=False)
         )
 
     def forward(self, logf0_uv, **batch):

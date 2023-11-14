@@ -94,6 +94,7 @@ class VCDataset(Dataset):
 
         params = AudioFeaturesParams()
         mel_spec = mel_spectrogram(target_audio_wave, params)
+        #torchaudio.save('check.wav', source_audio_wave, 16000)
         #print(f0.shape, audio_wave.shape, audio_length)
         return {
             "mel_spec": mel_spec,

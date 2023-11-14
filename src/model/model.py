@@ -54,6 +54,7 @@ class HiFiVC(nn.Module):
 
         f_info = self.FModel(f0)
 
+        #print(f_info.shape, text_info.shape)
         spectrogram = f_info + text_info
         #print('asr', text_info.shape)
 

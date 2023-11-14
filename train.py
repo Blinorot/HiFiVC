@@ -112,8 +112,8 @@ def train(args):
                 generated_audio = batch['generated_audio'][0].detach().cpu().numpy().T
                 real_audio = batch['real_audio'][0].detach().cpu().numpy().T
                 wandb.log({
-                    'step_generated_audio': wandb.Audio(generated_audio, sample_rate=16000),
-                    'step_real_audio': wandb.Audio(real_audio, sample_rate=16000)
+                    'step_generated_audio': wandb.Audio(generated_audio, sample_rate=24000),
+                    'step_real_audio': wandb.Audio(real_audio, sample_rate=24000)
                 }, step=step)
 
                 print(f"G_loss: {G_loss.item()}")
@@ -127,8 +127,8 @@ def train(args):
         generated_audio = batch['generated_audio'][0].detach().cpu().numpy().T
         real_audio = batch['real_audio'][0].detach().cpu().numpy().T
         wandb.log({
-            'generated_audio': wandb.Audio(generated_audio, sample_rate=16000),
-            'real_audio': wandb.Audio(real_audio, sample_rate=16000)
+            'generated_audio': wandb.Audio(generated_audio, sample_rate=24000),
+            'real_audio': wandb.Audio(real_audio, sample_rate=24000)
         }, step=step)
         
 
