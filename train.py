@@ -42,10 +42,10 @@ def train(args):
     D_optimizer = torch.optim.AdamW(model.descriminator.parameters(), lr=lr, 
                                    weight_decay=weight_decay, betas=betas)
 
-    G_params = list(model.generator.parameters()) + list(model.FModel.parameters()) +\
-            list(model.speaker_proj.parameters())
+    #G_params = list(model.generator.parameters()) + list(model.FModel.parameters()) +\
+    #        list(model.speaker_proj.parameters())
 
-    #G_params = list(model.generator.parameters()) + list(model.FModel.parameters())
+    G_params = list(model.generator.parameters()) + list(model.FModel.parameters())
 
     
     G_optimizer = torch.optim.AdamW(G_params, lr=lr, 

@@ -67,11 +67,11 @@ def mel_spectrogram(
     global mel_basis, hann_window
     if fmax not in mel_basis:
         mel = librosa_mel_fn(
-            audio_params.sampling_rate,
-            audio_params.n_fft,
-            audio_params.num_mel_bins,
-            fmin,
-            fmax,
+            sr=audio_params.sampling_rate,
+            n_fft=audio_params.n_fft,
+            n_mels=audio_params.num_mel_bins,
+            fmin=fmin,
+            fmax=fmax,
         )
         mel_basis[str(fmin) + "_" + str(fmax) + "_" + str(audio.device)] = (
             torch.from_numpy(mel).float().to(audio.device)

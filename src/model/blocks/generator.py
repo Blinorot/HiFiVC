@@ -18,7 +18,6 @@ class MRFBlock(nn.Module):
 
         layers = []
         speakers = []
-        speakers_linear = []
 
         for m in range(len(dilations)):
             layer = nn.Sequential(
@@ -34,20 +33,16 @@ class MRFBlock(nn.Module):
             layers.append(layer)
 
             speaker = nn.Sequential(
-                nn.LeakyReLU(LRELU_SLOPE),
                 weight_norm(
-                    nn.Conv1d(1, 1, kernel_size=1, 
+                    nn.Conv1d(256, channels, kernel_size=1, 
                           dilation=1, 
                           padding=0)
                 )
             )
-            speaker_linear = nn.Linear(192, channels)
             speakers.append(speaker)
-            speakers_linear.append(speaker_linear)
         
         self.block = nn.ModuleList(layers)
         self.speakers = nn.ModuleList(speakers)
-        self.speakers_linear = nn.ModuleList(speakers_linear)
 
         self.block.apply(init_weights)
         self.speakers.apply(init_weights)
@@ -55,8 +50,8 @@ class MRFBlock(nn.Module):
     def forward(self, x, speaker):
         result = 0
         for i in range(len(self.block)):
-            speaker_result = self.speakers_linear[i](self.speakers[i](speaker))
-            result = result + self.block[i](x + speaker_result.transpose(1, 2))
+            speaker_result = self.speakers[i](speaker)
+            result = result + self.block[i](x + speaker_result)
         return result
 
 
@@ -110,10 +105,10 @@ class Generator(nn.Module):
         )
         self.out_conv.apply(init_weights)
 
-    def forward(self, spectrogram, speaker_info_list):
+    def forward(self, spectrogram, speaker_info):
         spectrogram = self.in_conv(spectrogram)
         for i in range(self.blocks_length):
             spectrogram = self.blocks[i][0](spectrogram)
-            spectrogram = self.blocks[i][1](spectrogram, speaker_info_list)
+            spectrogram = self.blocks[i][1](spectrogram, speaker_info)
         generated_audio = self.out_conv(spectrogram)
         return {"generated_audio": generated_audio}

@@ -7,7 +7,7 @@ from tqdm.auto import tqdm
 import numpy as np
 import random
 
-from src.dataset.audio_utils import load_and_preprocess_audio
+from src.dataset.audio_utils import load_and_preprocess_audio, mel_spectrogram, AudioFeaturesParams
 from src.dataset.f0_utils import get_lf0_from_wav
 
 class VCDataset(Dataset):
@@ -91,8 +91,12 @@ class VCDataset(Dataset):
         f0 = get_lf0_from_wav(source_audio_wave.numpy()[0])
 
         source_audio_length = source_audio_wave.shape[-1]
+
+        params = AudioFeaturesParams()
+        mel_spec = mel_spectrogram(target_audio_wave, params)
         #print(f0.shape, audio_wave.shape, audio_length)
         return {
+            "mel_spec": mel_spec,
             "source_audio": source_audio_wave,
             "real_audio": target_audio_wave,
             "f0": f0,
@@ -102,6 +106,7 @@ class VCDataset(Dataset):
 
 def collate_fn(data_list):
     batch = {}
+    batch['mel_spec'] = torch.cat([elem['mel_spec'] for elem in data_list], dim=0)
     batch['real_audio'] = torch.cat([elem['real_audio'] for elem in data_list], dim=0).unsqueeze(1)
     batch['source_audio'] = torch.cat([elem['source_audio'] for elem in data_list], dim=0).unsqueeze(1)
     batch['f0'] = torch.cat([elem['f0'] for elem in data_list], dim=0)

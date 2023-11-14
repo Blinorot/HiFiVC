@@ -1,5 +1,5 @@
 import torch
-from src.model.blocks import Descriminator, Generator, ECAPA_TDNN, ASRModel, FModel
+from src.model.blocks import Descriminator, Generator, ECAPA_TDNN, VAE, ASRModel, FModel
 from torch import nn
 from speechbrain.utils.data_utils import download_file
 from pathlib import Path
@@ -11,8 +11,9 @@ class HiFiVC(nn.Module):
         self.device = device
 
         self.generator = Generator(**kwargs)
-        self.speaker_encoder = ECAPA_TDNN(**kwargs)
-        self.load_encoder()
+        #self.speaker_encoder = ECAPA_TDNN(**kwargs)
+        self.speaker_encoder = VAE()
+        #self.load_encoder()
 
         self.FModel = FModel(**kwargs)
         self.AsrModel = ASRModel(**kwargs)
@@ -20,11 +21,11 @@ class HiFiVC(nn.Module):
 
         self.descriminator = Descriminator(**kwargs)
 
-        self.speaker_proj = []
-        for i in range(len(kwargs['speaker_proj'])):
-            self.speaker_proj.append(nn.Linear(192, kwargs['speaker_proj'][i]))
-        self.speaker_proj_length = len(self.speaker_proj)
-        self.speaker_proj = nn.ModuleList(self.speaker_proj)   
+        # self.speaker_proj = []
+        # for i in range(len(kwargs['speaker_proj'])):
+        #     self.speaker_proj.append(nn.Linear(192, kwargs['speaker_proj'][i]))
+        # self.speaker_proj_length = len(self.speaker_proj)
+        # self.speaker_proj = nn.ModuleList(self.speaker_proj)   
     
 
     def load_encoder(self):
@@ -45,10 +46,10 @@ class HiFiVC(nn.Module):
 
         self.speaker_encoder.load_state_dict(new_state_dict)
 
-    def forward(self, source_audio, real_audio, f0, audio_length, **batch):
+    def forward(self, source_audio, mel_spec, real_audio, f0, audio_length, **batch):
         #print("source_shape", source_audio.shape)
         with torch.no_grad():
-            speaker_info = self.speaker_encoder(source_audio[:,0,:])
+            speaker_info = self.speaker_encoder(mel_spec)
             text_info = self.AsrModel(source_audio[:,0,:], audio_length)
 
         f_info = self.FModel(f0)
@@ -61,7 +62,7 @@ class HiFiVC(nn.Module):
         #     speaker_info_list.append(self.speaker_proj[i](speaker_info).unsqueeze(1))
 
         #print('speaker_info.shape', speaker_info.shape)
-        result = self.generator(spectrogram, speaker_info.unsqueeze(1))
+        result = self.generator(spectrogram, speaker_info)
         #print(result['generated_audio'].shape, real_audio.shape)
         #result['generated_audio'] = result['generated_audio'][:, :, :audio_length[0]]    
 

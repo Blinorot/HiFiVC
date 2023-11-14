@@ -10,6 +10,8 @@ This model is modified and combined based on the following three projects:
 import math, torch, torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
+from pathlib import Path
+from torch.nn.utils import weight_norm
 
 
 class SEModule(nn.Module):
@@ -198,3 +200,37 @@ class ECAPA_TDNN(nn.Module):
         x = self.bn6(x)
 
         return x
+    
+
+class VAE(nn.Module):
+    def __init__(self):
+        super().__init__()
+        model_path = Path(__file__).absolute().resolve().parent.parent.parent.parent / 'model.pt'
+        self.model = torch.jit.load(model_path, map_location='cpu')
+        self.model.eval()
+
+        self.mean_conv = weight_norm(nn.Conv1d(512, 128, 1))
+        self.std_conv = weight_norm(nn.Conv1d(512, 128, 1))
+
+        mean_conv_parameters = self.model._voice_conversion.speaker_encoder.mean_conv._parameters
+        self.mean_conv.bias = nn.Parameter(mean_conv_parameters['bias'])
+        self.mean_conv.weight_v = nn.Parameter(mean_conv_parameters['weight_v'])
+        self.mean_conv.weight_g = nn.Parameter(mean_conv_parameters['weight_g'])
+
+        std_conv_parameters = self.model._voice_conversion.speaker_encoder.std_conv._parameters
+        self.std_conv.bias = nn.Parameter(std_conv_parameters['bias'])
+        self.std_conv.weight_v = nn.Parameter(std_conv_parameters['weight_v'])
+        self.std_conv.weight_g = nn.Parameter(std_conv_parameters['weight_g'])
+
+        self.mean_conv.eval()
+        self.std_conv.eval()
+
+    def forward(self, x):
+        x = self.model._voice_conversion.speaker_encoder.pre_conv(x)
+        for i in range(4):
+            x = getattr(self.model._voice_conversion.speaker_encoder.convs, str(i))(x)
+        mean_x = self.mean_conv(x)
+        std_x = self.std_conv(x)
+        x = torch.cat([mean_x, std_x], dim=1)
+        y = self.model._voice_conversion.speaker_encoder.pooling_layer(x)
+        return y
