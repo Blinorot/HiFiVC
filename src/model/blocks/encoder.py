@@ -227,7 +227,7 @@ class VAE(nn.Module):
 
     def forward(self, x):
         x = self.model._voice_conversion.speaker_encoder.pre_conv(x)
-        for i in range(4):
+        for i in range(5):
             x = getattr(self.model._voice_conversion.speaker_encoder.convs, str(i))(x)
         mean_x = self.mean_conv(x)
         std_x = self.std_conv(x)

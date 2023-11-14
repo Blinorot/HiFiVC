@@ -87,8 +87,8 @@ class ResBlock2(torch.nn.Module):
 @dataclass
 class H:
     resblock = "1"
-    upsample_rates = [8,8,5,3]
-    upsample_kernel_sizes = [16,16,10,6]
+    upsample_rates = [10, 8, 6, 2]
+    upsample_kernel_sizes = [20, 16, 12, 4]
     upsample_initial_channel = 512
     resblock_kernel_sizes = [3,7,11]
     resblock_dilation_sizes = [[1,3,5], [1,3,5], [1,3,5]]
