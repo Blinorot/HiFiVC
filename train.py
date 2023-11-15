@@ -108,8 +108,8 @@ def train(args):
             D_loss.backward()
 
             if i % log_step == 0:
-                wandb.log({"D_loss": D_loss.item()}, step=step)
-                wandb.log({"D_grad": get_grad_norm(model.descriminator)})
+                wandb.log({"D_loss": D_loss.item(),
+                           "D_grad": get_grad_norm(model.descriminator)}, step=step)
                 print(f"D_loss: {D_loss.item()}")
 
             D_optimizer.step()
