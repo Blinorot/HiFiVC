@@ -49,9 +49,7 @@ class ResBlock1(torch.nn.Module):
             xt = c1(xt)
             xt = F.leaky_relu(xt, LRELU_SLOPE)
             speaker_proj = sp(speaker)
-            speaker_proj = speaker_proj[..., 0]
-            speaker_proj = speaker_proj / torch.linalg.norm(speaker_proj, dim=-1).unsqueeze(1)
-            speaker_proj = speaker_proj.unsqueeze(2)
+            speaker_proj = F.normalize(speaker_proj, p=2, dim=1)
             xt = xt + speaker_proj
             xt = F.leaky_relu(xt, LRELU_SLOPE)
             xt = c2(xt)

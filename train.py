@@ -23,7 +23,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
 
-MAX_NORM = 50
+MAX_NORM = 5
 
 @torch.no_grad()
 def get_grad_norm(model, norm_type=2):
@@ -64,13 +64,13 @@ def train(args):
     #        list(model.speaker_proj.parameters())
 
     #G_params = list(model.generator.parameters()) + list(model.FModel.parameters())
-    G_params = list(model.generator.parameters()) + list(model.speaker_encoder.parameters())
-
+    #G_params = list(model.generator.parameters()) + list(model.speaker_encoder.parameters())
+    G_params = list(model.generator.parameters())
     
     G_optimizer = torch.optim.AdamW(G_params, lr=lr, 
                                    weight_decay=weight_decay, betas=betas)
-    D_scheduler = torch.optim.lr_scheduler.ExponentialLR(D_optimizer, gamma=0.995)
-    G_scheduler = torch.optim.lr_scheduler.ExponentialLR(G_optimizer, gamma=0.995)
+    D_scheduler = torch.optim.lr_scheduler.ExponentialLR(D_optimizer, gamma=0.999)
+    G_scheduler = torch.optim.lr_scheduler.ExponentialLR(G_optimizer, gamma=0.999)
 
     descriminator_criterion = DescriminatorLoss()
     generator_criterion = GeneratorLoss()
@@ -117,7 +117,6 @@ def train(args):
                 print(f"D_loss: {D_loss.item()}")
 
             D_optimizer.step()
-            D_scheduler.step()
 
             G_optimizer.zero_grad()
             d_outputs = model.descriminate(**batch)
@@ -126,7 +125,7 @@ def train(args):
 
             G_loss.backward()
             clip_grad_norm_(model.generator.parameters(), MAX_NORM)
-            clip_grad_norm_(model.speaker_encoder.parameters(), MAX_NORM)
+            #clip_grad_norm_(model.speaker_encoder.parameters(), MAX_NORM)
             if i % log_step == 0:
                 wandb.log({
                     "G_loss": G_loss.item(),
@@ -135,7 +134,7 @@ def train(args):
                     "mel_loss": mel_loss.item(),
                     "kl_loss": kl_loss.item(),
                     "G_grad": get_grad_norm(model.generator),
-                    "VAE_grad": get_grad_norm(model.speaker_encoder)
+                    #"VAE_grad": get_grad_norm(model.speaker_encoder)
                 },step=step)
                 generated_audio = batch['generated_audio'][0].detach().cpu().numpy().T
                 real_audio = batch['real_audio'][0].detach().cpu().numpy().T
@@ -147,6 +146,8 @@ def train(args):
                 print(f"G_loss: {G_loss.item()}")
 
             G_optimizer.step()
+
+            D_scheduler.step()
             G_scheduler.step()
             step += 1
         torch.save(model.state_dict(), str(save_path / f'model.pth'),
@@ -207,5 +208,5 @@ if __name__ == '__main__':
 
     with wandb.init(
         project="HiFiVC",
-        name="norm_full_train"):
+        name="norm_pretrain"):
         train(args)

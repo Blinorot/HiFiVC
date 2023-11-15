@@ -231,9 +231,13 @@ class VAE(nn.Module):
             x = getattr(self.model._voice_conversion.speaker_encoder.convs, str(i))(x)
         mean_x = self.mean_conv(x)
         std_x = self.std_conv(x)
-        x = torch.cat([mean_x, std_x], dim=1)
-        y = self.model._voice_conversion.speaker_encoder.pooling_layer(x)
-        return y
+        if self.training:
+            exp_std = torch.exp(0.5 * std_x)
+            eps = torch.randn_like(exp_std).to(x.device)
+            res = mean_x + exp_std * eps
+        else:
+            res = mean_x
+        return {"result": res, "mean": mean_x, "std": std_x}
     
 
 class DownSample(nn.Module):

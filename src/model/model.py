@@ -12,7 +12,7 @@ class HiFiVC(nn.Module):
 
         self.generator = Generator(**kwargs)
         #self.speaker_encoder = ECAPA_TDNN(**kwargs)
-        self.speaker_encoder = VAE2(device)
+        self.speaker_encoder = VAE(device)
         #self.load_encoder()
 
         #self.FModel = FModel(**kwargs)
@@ -48,8 +48,8 @@ class HiFiVC(nn.Module):
 
     def forward(self, source_audio, mel_spec, real_audio, f0=None, audio_length=None, **batch):
         #print("source_shape", source_audio.shape)
-        speaker_res = self.speaker_encoder(mel_spec)
         with torch.no_grad():
+            speaker_res = self.speaker_encoder(mel_spec)
             text_info = self.AsrModel(source_audio[:,0,:], audio_length)
 
         #f_info = self.FModel(f0)

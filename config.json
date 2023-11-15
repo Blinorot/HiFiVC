@@ -11,5 +11,5 @@
     "max_audio_length": 10556,
     "weight_decay": 0.01,
     "betas": [0.8, 0.99],
-    "lr": 0.0002
+    "lr": 4e-5
 }

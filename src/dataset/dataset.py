@@ -26,7 +26,7 @@ class VCDataset(Dataset):
 
         self.index = self.load_index()
         if limit is not None:
-            random.shuffle(self.index)
+            #random.shuffle(self.index)
             self.index = self.index[:limit]
         self.limit = limit
         self.max_audio_length = max_audio_length

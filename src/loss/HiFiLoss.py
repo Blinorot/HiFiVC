@@ -29,11 +29,11 @@ class GeneratorLoss(nn.Module):
         std_info,
         **kwargs):
 
-        mean_info = mean_info[..., 0]
-        std_info = std_info[..., 0]
+        #mean_info = mean_info[..., 0]
+        #std_info = std_info[..., 0]
 
-        KL_loss = torch.mean(-0.5 * torch.sum(1 + std_info - mean_info ** 2 - std_info.exp(), dim = 1), dim = 0)
-
+        #KL_loss = torch.mean(-0.5 * torch.sum(1 + std_info - mean_info ** 2 - std_info.exp(), dim = 1), dim = 0)
+        KL_loss = torch.tensor([0]).to(real_audio.device)
 
         spectrogram = self.mel_transform(real_audio)
         generated_audio = generated_audio.squeeze(1) # remove channel
