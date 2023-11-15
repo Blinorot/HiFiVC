@@ -22,6 +22,21 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
 
+@torch.no_grad()
+def get_grad_norm(model, norm_type=2):
+    parameters = model.parameters()
+    if isinstance(parameters, torch.Tensor):
+        parameters = [parameters]
+    parameters = [p for p in parameters if p.grad is not None]
+    total_norm = torch.norm(
+        torch.stack(
+            [torch.norm(p.grad.detach(), norm_type).cpu() for p in parameters]
+        ),
+        norm_type,
+    )
+    return total_norm.item()
+
+
 def train(args):
     config = read_json(args.config)
 
@@ -94,6 +109,7 @@ def train(args):
 
             if i % log_step == 0:
                 wandb.log({"D_loss": D_loss.item()}, step=step)
+                wandb.log({"D_grad": get_grad_norm(model.descriminator).item()})
                 print(f"D_loss: {D_loss.item()}")
 
             D_optimizer.step()
@@ -110,7 +126,9 @@ def train(args):
                     "adv_loss": adv_loss.item(),
                     "fm_loss": fm_loss.item(),
                     "mel_loss": mel_loss.item(),
-                    "kl_loss": kl_loss.item()
+                    "kl_loss": kl_loss.item(),
+                    "G_grad": get_grad_norm(model.generator).item(),
+                    "VAE_grad": get_grad_norm(model.speaker_encoder).item()
                 },step=step)
                 generated_audio = batch['generated_audio'][0].detach().cpu().numpy().T
                 real_audio = batch['real_audio'][0].detach().cpu().numpy().T
