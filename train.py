@@ -120,6 +120,7 @@ def train(args):
             batch.update(d_outputs)
             G_loss, adv_loss, fm_loss, mel_loss, kl_loss = generator_criterion(**batch)
 
+            G_loss.backward()
             if i % log_step == 0:
                 wandb.log({
                     "G_loss": G_loss.item(),
@@ -139,7 +140,6 @@ def train(args):
 
                 print(f"G_loss: {G_loss.item()}")
 
-            G_loss.backward()
             G_optimizer.step()
             G_scheduler.step()
             step += 1
