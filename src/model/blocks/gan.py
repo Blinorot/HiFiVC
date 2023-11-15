@@ -49,6 +49,9 @@ class ResBlock1(torch.nn.Module):
             xt = c1(xt)
             xt = F.leaky_relu(xt, LRELU_SLOPE)
             speaker_proj = sp(speaker)
+            speaker_proj = speaker_proj[..., 0]
+            speaker_proj = speaker_proj / torch.linalg.norm(speaker_proj, dim=-1).unsqueeze(1)
+            speaker_proj = speaker_proj.unsqueeze(2)
             xt = xt + speaker_proj
             xt = F.leaky_relu(xt, LRELU_SLOPE)
             xt = c2(xt)
@@ -121,7 +124,10 @@ class Generator(torch.nn.Module):
         self.ups.apply(init_weights)
         self.conv_post.apply(init_weights)
 
+        self.norm = nn.LayerNorm(512)
+
     def forward(self, x, speaker):
+        x = self.norm(x.transpose(1, 2)).transpose(1, 2)
         x = self.conv_pre(x)
         for i in range(self.num_upsamples):
             x = F.leaky_relu(x, LRELU_SLOPE)

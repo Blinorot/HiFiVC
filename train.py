@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
+from torch.nn.utils import clip_grad_norm_
 import numpy as np
 import warnings
 import argparse
@@ -21,6 +22,8 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
+
+MAX_NORM = 50
 
 @torch.no_grad()
 def get_grad_norm(model, norm_type=2):
@@ -106,6 +109,7 @@ def train(args):
 
             D_loss = descriminator_criterion(**batch)
             D_loss.backward()
+            clip_grad_norm_(model.descriminator.parameters(), MAX_NORM)
 
             if i % log_step == 0:
                 wandb.log({"D_loss": D_loss.item(),
@@ -121,6 +125,8 @@ def train(args):
             G_loss, adv_loss, fm_loss, mel_loss, kl_loss = generator_criterion(**batch)
 
             G_loss.backward()
+            clip_grad_norm_(model.generator.parameters(), MAX_NORM)
+            clip_grad_norm_(model.speaker_encoder.parameters(), MAX_NORM)
             if i % log_step == 0:
                 wandb.log({
                     "G_loss": G_loss.item(),
@@ -201,5 +207,5 @@ if __name__ == '__main__':
 
     with wandb.init(
         project="HiFiVC",
-        name="full_train"):
+        name="norm_full_train"):
         train(args)
