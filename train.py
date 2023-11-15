@@ -64,8 +64,8 @@ def train(args):
     #        list(model.speaker_proj.parameters())
 
     #G_params = list(model.generator.parameters()) + list(model.FModel.parameters())
-    #G_params = list(model.generator.parameters()) + list(model.speaker_encoder.parameters())
-    G_params = list(model.generator.parameters())
+    G_params = list(model.generator.parameters()) + list(model.speaker_encoder.parameters())
+    #G_params = list(model.generator.parameters())
     
     G_optimizer = torch.optim.AdamW(G_params, lr=lr, 
                                    weight_decay=weight_decay, betas=betas)
@@ -125,7 +125,7 @@ def train(args):
 
             G_loss.backward()
             clip_grad_norm_(model.generator.parameters(), MAX_NORM)
-            #clip_grad_norm_(model.speaker_encoder.parameters(), MAX_NORM)
+            clip_grad_norm_(model.speaker_encoder.parameters(), MAX_NORM)
             if i % log_step == 0:
                 wandb.log({
                     "G_loss": G_loss.item(),
@@ -134,7 +134,7 @@ def train(args):
                     "mel_loss": mel_loss.item(),
                     "kl_loss": kl_loss.item(),
                     "G_grad": get_grad_norm(model.generator),
-                    #"VAE_grad": get_grad_norm(model.speaker_encoder)
+                    "VAE_grad": get_grad_norm(model.speaker_encoder)
                 },step=step)
                 generated_audio = batch['generated_audio'][0].detach().cpu().numpy().T
                 real_audio = batch['real_audio'][0].detach().cpu().numpy().T
@@ -208,5 +208,5 @@ if __name__ == '__main__':
 
     with wandb.init(
         project="HiFiVC",
-        name="norm_pretrain"):
+        name="norm_real_train"):
         train(args)
