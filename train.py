@@ -109,7 +109,7 @@ def train(args):
 
             if i % log_step == 0:
                 wandb.log({"D_loss": D_loss.item()}, step=step)
-                wandb.log({"D_grad": get_grad_norm(model.descriminator).item()})
+                wandb.log({"D_grad": get_grad_norm(model.descriminator)})
                 print(f"D_loss: {D_loss.item()}")
 
             D_optimizer.step()
@@ -128,8 +128,8 @@ def train(args):
                     "fm_loss": fm_loss.item(),
                     "mel_loss": mel_loss.item(),
                     "kl_loss": kl_loss.item(),
-                    "G_grad": get_grad_norm(model.generator).item(),
-                    "VAE_grad": get_grad_norm(model.speaker_encoder).item()
+                    "G_grad": get_grad_norm(model.generator),
+                    "VAE_grad": get_grad_norm(model.speaker_encoder)
                 },step=step)
                 generated_audio = batch['generated_audio'][0].detach().cpu().numpy().T
                 real_audio = batch['real_audio'][0].detach().cpu().numpy().T
