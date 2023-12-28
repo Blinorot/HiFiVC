@@ -1,2 +1,2 @@
 _target_: src.dataset.VCDataset
-max_audio_length: 16000
+max_audio_length: 16316
