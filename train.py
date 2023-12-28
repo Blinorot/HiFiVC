@@ -170,7 +170,7 @@ def main(cfg: DictConfig):
 
     with wandb.init(
         project="HiFiVC",
-        name="seminar_test"):
+        name=cfg.trainer.run_name):
         train(cfg)
         
 
