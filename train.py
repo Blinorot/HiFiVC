@@ -88,9 +88,6 @@ def train(cfg: DictConfig):
         print(f'Epoch: {epoch}')
         progress_bar = tqdm(dataloader, total=epoch_len)
         for i, batch in enumerate(progress_bar):
-            if i == epoch_len:
-                break
-
             batch['mel_spec'] = batch['mel_spec'].to(device)
             batch['real_audio'] = batch['real_audio'].to(device)
             batch['source_audio'] = batch['source_audio'].to(device)
@@ -149,6 +146,8 @@ def train(cfg: DictConfig):
             D_scheduler.step()
             G_scheduler.step()
             step += 1
+            if i == epoch_len - 1:
+                break
         torch.save(model.state_dict(), str(save_path / f'model.pth'),
                    _use_new_zipfile_serialization=False)
         generated_audio = batch['generated_audio'][0].detach().cpu().numpy().T
