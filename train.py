@@ -7,23 +7,31 @@ import argparse
 from tqdm.auto import tqdm
 import wandb
 from pathlib import Path
+import hydra
+from hydra.utils import instantiate
+from hydra.core.hydra_config import HydraConfig
+from omegaconf import DictConfig, OmegaConf
 
-from src.model import HiFiVC
-from src.utils import read_json
-from src.dataset.dataset import VCDataset, collate_fn
-from src.loss.HiFiLoss import GeneratorLoss, DescriminatorLoss
+from src.utils import inf_loop
+from src.dataset.dataset import collate_fn
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # fix random seeds for reproducibility
 SEED = 123
-torch.manual_seed(SEED)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-np.random.seed(SEED)
+DEFAULT_CONFIG_NAME = "hifivc"
+ROOT_PATH = Path(__file__).absolute().resolve().parent
+SAVE_DIR = ROOT_PATH / "saved"
+MAX_NORM = 50000
 
-MAX_NORM = 5
+
+def fix_seed(seed):
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+
 
 @torch.no_grad()
 def get_grad_norm(model, norm_type=2):
@@ -40,58 +48,49 @@ def get_grad_norm(model, norm_type=2):
     return total_norm.item()
 
 
-def train(args):
-    config = read_json(args.config)
-
+def train(cfg: DictConfig):
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     
-    model = HiFiVC(device, **config)
+    model = instantiate(cfg.model, device=device)
     model.to(device)
-    dataset = VCDataset(data_path=args.data_path, part='train',
-                        max_audio_length=config['max_audio_length'],
-                        limit=config.get('limit', None))
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
-                            num_workers=args.num_workers, collate_fn=collate_fn)
+    dataset = instantiate(cfg.dataset, part="train")
+    dataloader = DataLoader(dataset, batch_size=cfg.trainer.batch_size, shuffle=True,
+                            num_workers=cfg.trainer.num_workers, collate_fn=collate_fn)
+    dataloader = inf_loop(dataloader)
 
-    weight_decay = config['weight_decay']
-    betas = config['betas']
-    lr = config['lr']
-    
-    D_optimizer = torch.optim.AdamW(model.descriminator.parameters(), lr=lr, 
-                                   weight_decay=weight_decay, betas=betas)
 
-    #G_params = list(model.generator.parameters()) + list(model.FModel.parameters()) +\
-    #        list(model.speaker_proj.parameters())
+    if cfg.trainer.get("generator_only", False):
+        G_params = model.generator.parameters()
+    else:
+        G_params = list(model.generator.parameters()) + list(model.speaker_encoder.parameters())
+    G_optimizer = instantiate(cfg.G_optimizer, params=G_params)
+    G_scheduler = instantiate(cfg.G_scheduler, optimizer=G_optimizer)
+    D_optimizer = instantiate(cfg.D_optimizer, params=model.discriminator.parameters())
+    D_scheduler = instantiate(cfg.D_scheduler, optimizer=D_optimizer)
 
-    #G_params = list(model.generator.parameters()) + list(model.FModel.parameters())
-    G_params = list(model.generator.parameters()) + list(model.speaker_encoder.parameters())
-    #G_params = list(model.generator.parameters())
-    
-    G_optimizer = torch.optim.AdamW(G_params, lr=lr, 
-                                   weight_decay=weight_decay, betas=betas)
-    D_scheduler = torch.optim.lr_scheduler.ExponentialLR(D_optimizer, gamma=0.999)
-    G_scheduler = torch.optim.lr_scheduler.ExponentialLR(G_optimizer, gamma=0.999)
+    discriminator_criterion = instantiate(cfg.D_loss_function)
+    generator_criterion = instantiate(cfg.G_loss_function)
 
-    descriminator_criterion = DescriminatorLoss()
-    generator_criterion = GeneratorLoss()
-
-    descriminator_criterion.to(device)
+    discriminator_criterion.to(device)
     generator_criterion.to(device)
 
-    log_step = 50
+    log_step = cfg.trainer.log_step
 
-    save_path = Path(args.save_path)
-    save_path.mkdir(parents=True, exist_ok=True)
+    save_path = SAVE_DIR
+    epoch_len = cfg.trainer.epoch_len
 
     step = 0
 
     model.train()
     model.AsrModel.eval()
 
-    for epoch in range(args.n_epochs):
+    for epoch in range(cfg.trainer.n_epochs):
         print(f'Epoch: {epoch}')
-        progress_bar = tqdm(dataloader)
+        progress_bar = tqdm(dataloader, total=epoch_len)
         for i, batch in enumerate(progress_bar):
+            if i == epoch_len:
+                break
+
             batch['mel_spec'] = batch['mel_spec'].to(device)
             batch['real_audio'] = batch['real_audio'].to(device)
             batch['source_audio'] = batch['source_audio'].to(device)
@@ -103,29 +102,29 @@ def train(args):
 
             D_optimizer.zero_grad()
 
-            d_outputs = model.descriminate(generated_audio=batch["generated_audio"].detach(),
+            d_outputs = model.discriminate(generated_audio=batch["generated_audio"].detach(),
                                         real_audio=batch["real_audio"])
             batch.update(d_outputs)
 
-            D_loss = descriminator_criterion(**batch)
+            D_loss = discriminator_criterion(**batch)
             D_loss.backward()
-            clip_grad_norm_(model.descriminator.parameters(), MAX_NORM)
+            clip_grad_norm_(model.discriminator.parameters(), cfg.trainer.get("max_grad_norm", MAX_NORM))
 
             if i % log_step == 0:
                 wandb.log({"D_loss": D_loss.item(),
-                           "D_grad": get_grad_norm(model.descriminator)}, step=step)
+                           "D_grad": get_grad_norm(model.discriminator)}, step=step)
                 print(f"D_loss: {D_loss.item()}")
 
             D_optimizer.step()
 
             G_optimizer.zero_grad()
-            d_outputs = model.descriminate(**batch)
+            d_outputs = model.discriminate(**batch)
             batch.update(d_outputs)
             G_loss, adv_loss, fm_loss, mel_loss, kl_loss = generator_criterion(**batch)
 
             G_loss.backward()
-            clip_grad_norm_(model.generator.parameters(), MAX_NORM)
-            clip_grad_norm_(model.speaker_encoder.parameters(), MAX_NORM)
+            clip_grad_norm_(model.generator.parameters(),  cfg.trainer.get("max_grad_norm", MAX_NORM))
+            clip_grad_norm_(model.speaker_encoder.parameters(),  cfg.trainer.get("max_grad_norm", MAX_NORM))
             if i % log_step == 0:
                 wandb.log({
                     "G_loss": G_loss.item(),
@@ -158,55 +157,22 @@ def train(args):
             'generated_audio': wandb.Audio(generated_audio, sample_rate=24000),
             'real_audio': wandb.Audio(real_audio, sample_rate=24000)
         }, step=step)
-        
 
-if __name__ == '__main__':
-    args = argparse.ArgumentParser(description="PyTorch Template")
-    args.add_argument(
-        "-c",
-        "--config",
-        default="config.json",
-        type=str,
-        help="config file path (default: config.json)",
-    )
-    args.add_argument(
-        "-d",
-        "--data_path",
-        default=None,
-        type=str,
-        help="data path (default: None)",
-    )
-    args.add_argument(
-        "-s",
-        "--save_path",
-        default='saved',
-        type=str,
-        help="save path (default: saved)",
-    )
-    args.add_argument(
-        "-n",
-        "--n_epochs",
-        default=120,
-        type=int,
-        help="number of epochs (default: 120)",
-    )
-    args.add_argument(
-        "-b",
-        "--batch_size",
-        default=20,
-        type=int,
-        help="batch_size (default: 20)",
-    )
-    args.add_argument(
-        "--num_workers",
-        default=2,
-        type=int,
-        help="number of workers (default: 2)",
-    )
 
-    args = args.parse_args()
+@hydra.main(
+    version_base=None,
+    config_path=str(ROOT_PATH / "src" / "configs"),
+    config_name=DEFAULT_CONFIG_NAME,
+)
+def main(cfg: DictConfig):
+    SAVE_DIR.mkdir(exist_ok=True, parents=True)
+    fix_seed(SEED)
 
     with wandb.init(
         project="HiFiVC",
-        name="norm_real_train"):
-        train(args)
+        name="seminar_test"):
+        train(cfg)
+        
+
+if __name__ == '__main__':
+    main()

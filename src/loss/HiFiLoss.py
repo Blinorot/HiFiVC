@@ -58,7 +58,7 @@ class GeneratorLoss(nn.Module):
         return G_loss, adv_loss, fm_loss, mel_loss, KL_loss
     
 
-class DescriminatorLoss(nn.Module):
+class DiscriminatorLoss(nn.Module):
     def __init__(self):
         super().__init__()
 

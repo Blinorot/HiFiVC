@@ -1,5 +1,5 @@
 import torch
-from src.model.blocks import Descriminator, Generator, ECAPA_TDNN, VAE, VAE2, ASRModel, FModel
+from src.model.blocks import Discriminator, Generator, ECAPA_TDNN, VAE, VAE2, ASRModel, FModel
 from torch import nn
 from speechbrain.utils.data_utils import download_file
 from pathlib import Path
@@ -19,7 +19,7 @@ class HiFiVC(nn.Module):
         self.AsrModel = ASRModel(**kwargs)
         #self.AsrModel = nn.Identity()
 
-        self.descriminator = Descriminator(**kwargs)
+        self.discriminator = Discriminator(**kwargs)
 
         # self.speaker_proj = []
         # for i in range(len(kwargs['speaker_proj'])):
@@ -81,5 +81,5 @@ class HiFiVC(nn.Module):
     def generate(self, **batch):
         return self.forward(**batch)
 
-    def descriminate(self, generated_audio, real_audio, **batch):
-        return self.descriminator(generated_audio, real_audio)
+    def discriminate(self, generated_audio, real_audio, **batch):
+        return self.discriminator(generated_audio, real_audio)

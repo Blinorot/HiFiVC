@@ -10,6 +10,7 @@ import random
 from src.dataset.audio_utils import load_and_preprocess_audio, mel_spectrogram, AudioFeaturesParams
 from src.dataset.f0_utils import get_lf0_from_wav
 
+
 class VCDataset(Dataset):
     def __init__(self, data_path = None, part='train', max_audio_length=16000, limit=None):
         super().__init__()

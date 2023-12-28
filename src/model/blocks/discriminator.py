@@ -160,7 +160,7 @@ class MultiScaleDiscriminator(nn.Module):
         return real_outs, generated_outs, real_features, generated_features
 
 
-class Descriminator(nn.Module):
+class Discriminator(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
 

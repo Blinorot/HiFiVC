@@ -1,6 +1,6 @@
-from src.loss.HiFiLoss import DescriminatorLoss, GeneratorLoss
+from src.loss.HiFiLoss import DiscriminatorLoss, GeneratorLoss
 
 __all__ = [
     "GeneratorLoss",
-    "DescriminatorLoss"
+    "DiscriminatorLoss"
 ]

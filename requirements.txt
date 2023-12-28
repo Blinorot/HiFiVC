@@ -10,3 +10,4 @@ speechbrain~=0.5.12
 wandb
 torchaudio~=0.13.1
 gdown>=4.5.4
+hydra-core

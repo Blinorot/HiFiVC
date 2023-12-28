@@ -109,6 +109,8 @@ saved/
 results/
 waveglow/pretrained_model/
 wandb/
+outputs/
+model.pt
 
 # editor, os cache directory
 .vscode/

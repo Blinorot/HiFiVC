@@ -276,7 +276,7 @@ class MultiScaleDiscriminator(torch.nn.Module):
         return y_d_rs, y_d_gs, fmap_rs, fmap_gs
     
 
-class Descriminator(nn.Module):
+class Discriminator(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
 

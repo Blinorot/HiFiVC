@@ -1,5 +1,8 @@
 from torch import nn
 import nemo.collections.asr as nemo_asr
+import logging
+logging.getLogger('nemo_logger').setLevel(logging.ERROR)
+
 
 class ASRModel(nn.Module):
     def __init__(self, **kwargs):
