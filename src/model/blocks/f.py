@@ -3,9 +3,8 @@ from torch import nn
 LRELU_SLOPE = 0.1
 
 class FModel(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(self, pitch_embed_dim, **kwargs):
         super().__init__()
-        pitch_embed_dim = kwargs['pitch_embed_dim']
         self.pitch_convs = nn.Sequential(
             nn.Conv1d(
                     2, pitch_embed_dim // 2, kernel_size=1, stride=1, 

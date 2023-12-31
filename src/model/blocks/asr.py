@@ -20,8 +20,4 @@ class ASRModel(nn.Module):
         encoded, encoded_length = self.asr_model.encoder.forward(
             audio_signal=preproc_audio,
             length=preproc_audio_length)
-        # encoded, _, _ = self.asr_model.forward(input_signal=audio,
-        #                                  input_signal_length=audio_length)
-        # encoded = encoded.transpose(1, 2)
-        #print(encoded.shape)
         return encoded

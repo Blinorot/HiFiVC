@@ -29,11 +29,17 @@ class GeneratorLoss(nn.Module):
         std_info,
         **kwargs):
 
-        mean_info = mean_info[..., 0]
-        std_info = std_info[..., 0]
+        # KL loss
 
-        KL_loss = torch.mean(-0.5 * torch.sum(1 + std_info - mean_info ** 2 - std_info.exp(), dim = 1), dim = 0)
-        #KL_loss = torch.tensor([0]).to(real_audio.device)
+        KL_loss = torch.tensor([0], device=generated_audio.device)
+
+        if mean_info is not None and std_info is not None:
+            mean_info = mean_info[..., 0]
+            std_info = std_info[..., 0]
+
+            KL_loss = torch.mean(-0.5 * torch.sum(1 + std_info - mean_info ** 2 - std_info.exp(), dim = 1), dim = 0)
+
+        # L! loss
 
         spectrogram = self.mel_transform(real_audio.squeeze(1))
         generated_audio = generated_audio.squeeze(1) # remove channel
@@ -41,17 +47,21 @@ class GeneratorLoss(nn.Module):
 
         #print(spectrogram.shape, generated_spectrogram.shape)
 
+        # FM loss
+
         fm_loss_p = feature_loss(p_real_feat, p_gen_feat)
         fm_loss_s = feature_loss(s_real_feat, s_gen_feat)
 
         fm_loss = fm_loss_s + fm_loss_p
+
+        # ADV loss
 
         adv_loss_p, _ = generator_loss(p_gen_outs)
         adv_loss_s, _ = generator_loss(s_gen_outs)
 
         adv_loss = adv_loss_p + adv_loss_s
 
-        # mel_loss
+        # MEL loss
         mel_loss = self.l1_loss(generated_spectrogram, spectrogram)
 
         G_loss = adv_loss + self.fm_coef * fm_loss + self.mel_coef * mel_loss\

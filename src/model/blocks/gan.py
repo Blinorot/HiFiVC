@@ -10,9 +10,8 @@ LRELU_SLOPE = 0.1
 
 
 class ResBlock1(torch.nn.Module):
-    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3, 5)):
+    def __init__(self, channels, speaker_channels, kernel_size=3, dilation=(1, 3, 5)):
         super(ResBlock1, self).__init__()
-        self.h = h
         self.convs1 = nn.ModuleList([
             weight_norm(Conv1d(channels, channels, kernel_size, 1, dilation=dilation[0],
                                padding=get_padding(kernel_size, dilation[0]))),
@@ -34,11 +33,11 @@ class ResBlock1(torch.nn.Module):
         self.convs2.apply(init_weights)
 
         self.spk_convs = nn.ModuleList([
-            weight_norm(Conv1d(128, channels, 1, 1, dilation=1,
+            weight_norm(Conv1d(speaker_channels, channels, 1, 1, dilation=1,
                                padding=get_padding(1, 1))),
-            weight_norm(Conv1d(128, channels, 1, 1, dilation=1,
+            weight_norm(Conv1d(speaker_channels, channels, 1, 1, dilation=1,
                                padding=get_padding(1, 1))),
-            weight_norm(Conv1d(128, channels, 1, 1, dilation=1,
+            weight_norm(Conv1d(speaker_channels, channels, 1, 1, dilation=1,
                                padding=get_padding(1, 1)))
         ])
         self.spk_convs.apply(init_weights)
@@ -49,7 +48,6 @@ class ResBlock1(torch.nn.Module):
             xt = c1(xt)
             xt = F.leaky_relu(xt, LRELU_SLOPE)
             speaker_proj = sp(speaker)
-            speaker_proj = F.normalize(speaker_proj, p=2, dim=1)
             xt = xt + speaker_proj
             xt = F.leaky_relu(xt, LRELU_SLOPE)
             xt = c2(xt)
@@ -64,9 +62,8 @@ class ResBlock1(torch.nn.Module):
 
 
 class ResBlock2(torch.nn.Module):
-    def __init__(self, h, channels, kernel_size=3, dilation=(1, 3)):
+    def __init__(self, channels, kernel_size=3, dilation=(1, 3)):
         super(ResBlock2, self).__init__()
-        self.h = h
         self.convs = nn.ModuleList([
             weight_norm(Conv1d(channels, channels, kernel_size, 1, dilation=dilation[0],
                                padding=get_padding(kernel_size, dilation[0]))),
@@ -87,45 +84,34 @@ class ResBlock2(torch.nn.Module):
             remove_weight_norm(l)
 
 
-@dataclass
-class H:
-    resblock = "1"
-    upsample_rates = [10, 8, 6, 2]
-    upsample_kernel_sizes = [20, 16, 12, 4]
-    upsample_initial_channel = 512
-    resblock_kernel_sizes = [3,7,11]
-    resblock_dilation_sizes = [[1,3,5], [1,3,5], [1,3,5]]
-
-
 class Generator(torch.nn.Module):
-    def __init__(self, h=H(), **kwargs):
+    def __init__(self, resblock, upsample_rates, upsample_kernel_sizes,
+                 upsample_initial_channel, resblock_kernel_sizes, resblock_dilation_sizes,
+                 speaker_channels, **kwargs):
         super(Generator, self).__init__()
-        self.h = h
-        self.num_kernels = len(h.resblock_kernel_sizes)
-        self.num_upsamples = len(h.upsample_rates)
-        self.conv_pre = weight_norm(Conv1d(512, h.upsample_initial_channel, 7, 1, padding=3))
-        resblock = ResBlock1 if h.resblock == '1' else ResBlock2
+        self.num_kernels = len(resblock_kernel_sizes)
+        self.num_upsamples = len(upsample_rates)
+        self.conv_pre = weight_norm(Conv1d(512, upsample_initial_channel, 7, 1, padding=3))
+        resblock = ResBlock1 if resblock == '1' else ResBlock2
 
         self.ups = nn.ModuleList()
-        for i, (u, k) in enumerate(zip(h.upsample_rates, h.upsample_kernel_sizes)):
+        for i, (u, k) in enumerate(zip(upsample_rates, upsample_kernel_sizes)):
             self.ups.append(weight_norm(
-                ConvTranspose1d(h.upsample_initial_channel//(2**i), h.upsample_initial_channel//(2**(i+1)),
+                ConvTranspose1d(upsample_initial_channel//(2**i), upsample_initial_channel//(2**(i+1)),
                                 k, u, padding=(k-u)//2)))
 
         self.resblocks = nn.ModuleList()
         for i in range(len(self.ups)):
-            ch = h.upsample_initial_channel//(2**(i+1))
-            for j, (k, d) in enumerate(zip(h.resblock_kernel_sizes, h.resblock_dilation_sizes)):
-                self.resblocks.append(resblock(h, ch, k, d))
+            ch = upsample_initial_channel//(2**(i+1))
+            for j, (k, d) in enumerate(zip(resblock_kernel_sizes, resblock_dilation_sizes)):
+                self.resblocks.append(resblock(ch, speaker_channels, k, d))
 
         self.conv_post = weight_norm(Conv1d(ch, 1, 7, 1, padding=3))
         self.ups.apply(init_weights)
         self.conv_post.apply(init_weights)
 
-        self.norm = nn.LayerNorm(512)
 
     def forward(self, x, speaker):
-        x = self.norm(x.transpose(1, 2)).transpose(1, 2)
         x = self.conv_pre(x)
         for i in range(self.num_upsamples):
             x = F.leaky_relu(x, LRELU_SLOPE)

@@ -1,34 +1,40 @@
 import torch
-from src.model.blocks import Discriminator, Generator, ECAPA_TDNN, VAE, VAE2, ASRModel, FModel
+from src.model.blocks import Discriminator, Generator, ECAPA_TDNN, VAEPretrained, VAE, ASRModel, FModel
 from torch import nn
 from speechbrain.utils.data_utils import download_file
 from pathlib import Path
 
 
 class HiFiVC(nn.Module):
-    def __init__(self, device, **kwargs):
+    def __init__(self, encoder, device, generator_only=False, use_f=False, **kwargs):
         super().__init__()
         self.device = device
 
         self.generator = Generator(**kwargs)
-        #self.speaker_encoder = ECAPA_TDNN(**kwargs)
-        self.speaker_encoder = VAE2(device)
-        #self.load_encoder()
 
-        #self.FModel = FModel(**kwargs)
+        self.encoder = encoder
+        self.generator_only = generator_only
+
+        if encoder == "ECAPA":
+            self.speaker_encoder = ECAPA_TDNN(**kwargs)
+            self._load_encoder()
+        elif encoder == "VAE":
+            self.speaker_encoder = VAE()
+        elif encoder == "VAEPretrained":
+            self.speaker_encoder = VAEPretrained()
+        else:
+            raise NotImplementedError()
+        
+        self.use_f = use_f
+        if use_f:
+            self.FModel = FModel(**kwargs)
+
         self.AsrModel = ASRModel(**kwargs)
-        #self.AsrModel = nn.Identity()
 
         self.discriminator = Discriminator(**kwargs)
 
-        # self.speaker_proj = []
-        # for i in range(len(kwargs['speaker_proj'])):
-        #     self.speaker_proj.append(nn.Linear(192, kwargs['speaker_proj'][i]))
-        # self.speaker_proj_length = len(self.speaker_proj)
-        # self.speaker_proj = nn.ModuleList(self.speaker_proj)   
-    
 
-    def load_encoder(self):
+    def _load_encoder(self):
         data_path = Path(__file__).absolute().resolve().parent.parent.parent / 'data'
         model_path = data_path / 'encoder.pth'
         data_path.mkdir(parents=True, exist_ok=True)
@@ -47,27 +53,29 @@ class HiFiVC(nn.Module):
         self.speaker_encoder.load_state_dict(new_state_dict)
 
     def forward(self, source_audio, mel_spec, real_audio, f0=None, audio_length=None, **batch):
-        #print("source_shape", source_audio.shape)
-        speaker_res = self.speaker_encoder(mel_spec)
+        encoder_input = mel_spec
+        if self.encoder == "ECAPA":
+            encoder_input = source_audio[:,0,:]
+        
         with torch.no_grad():
             text_info = self.AsrModel(source_audio[:,0,:], audio_length)
+            if self.generator_only:
+                speaker_res = self.speaker_encoder(encoder_input)
 
-        #f_info = self.FModel(f0)
+        if not self.generator_only:
+            speaker_res = self.speaker_encoder(encoder_input)
 
-        #print(f_info.shape, text_info.shape)
-        #spectrogram = f_info + text_info
-        spectrogram = text_info
-        #print('asr', text_info.shape)
+        
+        if self.use_f:
+            f_info = self.FModel(f0)
+            spectrogram = f_info + text_info
+        else:
+            spectrogram = text_info
 
         speaker_info = speaker_res['result']
-        mean_info = speaker_res['mean']
-        std_info = speaker_res['std']
+        mean_info = speaker_res.get('mean', None)
+        std_info = speaker_res.get('std', None)
 
-        # speaker_info_list = []
-        # for i in range(self.speaker_proj_length):
-        #     speaker_info_list.append(self.speaker_proj[i](speaker_info).unsqueeze(1))
-
-        #print('speaker_info.shape', speaker_info.shape)
         result = self.generator(spectrogram, speaker_info)
         #print(result['generated_audio'].shape, real_audio.shape)
         #result['generated_audio'] = result['generated_audio'][..., :real_audio[0].shape[-1]]
